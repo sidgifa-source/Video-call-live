@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>غرفة اتصال</title>
+  <style>
+    body { margin: 0; font-family: sans-serif; }
+    #container { height: 100vh; display: flex; flex-direction: column; }
+    #toolbar { padding: 10px; background: #222; color: white; text-align: center; }
+    #toolbar input { padding: 8px; width: 200px; border-radius: 6px; border: none; }
+    #toolbar button { padding: 8px 16px; border-radius: 6px; border: none; cursor: pointer; margin-right: 8px; }
+    #jitsi-container { flex: 1; }
+  </style>
+</head>
+<body>
+  <div id="container">
+    <div id="toolbar">
+      <span>اسم الغرفة: </span>
+      <input id="roomInput" type="text" value="Company-Meeting-01" />
+      <button onclick="startCall()">ابدأ المكالمة</button>
+      <button onclick="copyLink()">نسخ رابط الدعوة</button>
+    </div>
+    <div id="jitsi-container"></div>
+  </div>
+
+  <script src='https://meet.jit.si/external_api.js'></script>
+  <script>
+    let api = null;
+
+    function startCall() {
+      const room = document.getElementById('roomInput').value.trim();
+      if (!room) { alert('أدخل اسم الغرفة أولاً'); return; }
+
+      // إذا كانت هناك مكالمة مفتوحة، أغلقها أولاً
+      if (api) { api.dispose(); }
+
+      const domain = 'meet.jit.si';
+      const options = {
+        roomName: room,
+        parentNode: document.getElementById('jitsi-container'),
+        width: '100%',
+        height: '100%',
+        configOverwrite: {
+          startWithAudioMuted: true,
+          startWithVideoMuted: false,
+          prejoinPageEnabled: false, // تخطي صفحة الانتظار للدخول مباشرة
+        },
+        interfaceConfigOverwrite: {
+          SHOW_JITSI_WATERMARK: false,
+          SHOW_BRAND_WATERMARK: false,
+          DEFAULT_BACKGROUND: '#111',
+        }
+      };
+
+      api = new JitsiMeetExternalAPI(domain, options);
+
+      // أحداث اختيارية (يمكنك تفعيلها لاحقًا)
+      api.addEventListener('participantJoined', (p) => console.log('انضم:', p.displayName));
+      api.addEventListener('videoConferenceLeft', () => console.log('غادر أحدهم'));
+    }
+
+    function copyLink() {
+      const room = document.getElementById('roomInput').value.trim();
+      if (!room) { alert('أدخل اسم الغرفة أولاً'); return; }
+      const link = `${window.location.origin}${window.location.pathname}?room=${encodeURIComponent(room)}`;
+      navigator.clipboard.writeText(link).then(() => alert('تم نسخ رابط الدعوة:\n' + link));
+    }
+
+    // دعم فتح الرابط مع اسم غرفة جاهز (مثل ?room=Project-A)
+    const params = new URLSearchParams(window.location.search);
+    const roomFromUrl = params.get('room');
+    if (roomFromUrl) {
+      document.getElementById('roomInput').value = roomFromUrl;
+      // يمكنك تلقائيًا بدء المكالمة إذا أردت:
+      // startCall();
+    }
+  </script>
+</body>
+</html>
