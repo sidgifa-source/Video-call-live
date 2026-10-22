@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>مكالمة فيديو بسيطة</title>
+    <script src="https://unpkg.com/peerjs@1.5.2/dist/peerjs.min.js"></script>
+    <style>
+        body { 
+            font-family: Arial, sans-serif; 
+            text-align: center; 
+            background: #f0f0f0; 
+            padding: 20px; 
+        }
+        video { 
+            width: 90%; 
+            max-width: 400px; 
+            background: black; 
+            border-radius: 10px; 
+            margin: 10px; 
+        }
+        button { 
+            padding: 15px 30px; 
+            background: #4CAF50; 
+            color: white; 
+            border: none; 
+            border-radius: 5px; 
+            font-size: 18px; 
+            cursor: pointer; 
+            margin: 10px; 
+        }
+        input { 
+            padding: 10px; 
+            width: 80%; 
+            max-width: 300px; 
+            font-size: 16px; 
+            margin: 10px; 
+        }
+        #myId { 
+            background: white; 
+            padding: 10px; 
+            margin: 10px; 
+            border-radius: 5px; 
+            font-weight: bold; 
+        }
+    </style>
+</head>
+<body>
+    <h1>📹 مكالمة فيديو</h1>
+    
+    <div id="myId">جاري التحميل...</div>
+    
+    <div>
+        <input type="text" id="remoteId" placeholder="الصق معرف الطرف الآخر">
+        <br>
+        <button onclick="call()">📞 اتصل</button>
+    </div>
+    
+    <div>
+        <video id="myVideo" autoplay muted></video>
+        <video id="remoteVideo" autoplay></video>
+    </div>
+
+    <script>
+        let myStream;
+        const myVideo = document.getElementById('myVideo');
+        const remoteVideo = document.getElementById('remoteVideo');
+        const myIdDiv = document.getElementById('myId');
+        
+        // إنشاء Peer
+        const peer = new Peer();
+        
+        // عند الحصول على المعرف
+        peer.on('open', id => {
+            myIdDiv.textContent = 'معرفك: ' + id;
+        });
+        
+        // تشغيل الكاميرا
+        navigator.mediaDevices.getUserMedia({ video: true, audio: true })
+            .then(stream => {
+                myStream = stream;
+                myVideo.srcObject = stream;
+            })
+            .catch(err => {
+                alert('يرجى السماح بالكاميرا والميكروفون');
+            });
+        
+        // استقبال المكالمات
+        peer.on('call', call => {
+            call.answer(myStream);
+            call.on('stream', remoteStream => {
+                remoteVideo.srcObject = remoteStream;
+            });
+        });
+        
+        // بدء المكالمة
+        function call() {
+            const remoteId = document.getElementById('remoteId').value;
+            if (!remoteId) {
+                alert('اكتب معرف الطرف الآخر');
+                return;
+            }
+            
+            const call = peer.call(remoteId, myStream);
+            call.on('stream', remoteStream => {
+                remoteVideo.srcObject = remoteStream;
+            });
+        }
+    </script>
+</body>
+</html>
